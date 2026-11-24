@@ -1,10 +1,10 @@
 import React,{createContext,useContext,useEffect,useState} from 'react';
 import {Link,NavLink,Navigate,Route,Routes,useNavigate} from 'react-router-dom';
-import {Menu,X,Leaf,LogOut,LayoutDashboard,PlusCircle,ShoppingBasket,Handshake,UserRound,ClipboardList,UsersRound,PackageCheck,BarChart3,ShieldCheck,ArrowRight} from 'lucide-react';
+import {Menu,X,Leaf,LogOut,LayoutDashboard,PlusCircle,ShoppingBasket,Handshake,ClipboardList,UsersRound,PackageCheck,BarChart3,ShieldCheck,ArrowRight} from 'lucide-react';
 import {api,getToken,clearToken,saveToken} from './api';
 import {Loading,Pill,Alert} from './components';
 import {Home,Login,Register} from './AuthPages';
-import {Dashboard,Profile} from './CorePages';
+import {Dashboard} from './CorePages';
 import {AddProduce,MyProduce,FarmerMatches} from './FarmerPages';
 import {PostDemand,MyDemands,BuyerMatches} from './BuyerPages';
 import {AdminUsers,AdminProduce,AdminMatches,Reports} from './AdminPages';
@@ -21,8 +21,8 @@ function AuthProvider({children}){
  return <AuthContext.Provider value={{user,loading,login,logout,refresh}}>{children}</AuthContext.Provider>
 }
 const menus={
- farmer:[['/dashboard','Dashboard',LayoutDashboard],['/farmer/add-produce','Add Produce',PlusCircle],['/farmer/my-produce','My Produce',ShoppingBasket],['/farmer/matches','My Matches',Handshake],['/profile','My Profile',UserRound]],
- buyer:[['/dashboard','Dashboard',LayoutDashboard],['/buyer/post-demand','Post Demand',PlusCircle],['/buyer/my-demands','My Demands',ClipboardList],['/buyer/matches','Matched Farmers',Handshake],['/profile','Company Profile',UserRound]],
+ farmer:[['/dashboard','Dashboard',LayoutDashboard],['/farmer/add-produce','Add Produce',PlusCircle],['/farmer/my-produce','My Produce',ShoppingBasket],['/farmer/matches','My Matches',Handshake]],
+ buyer:[['/dashboard','Dashboard',LayoutDashboard],['/buyer/post-demand','Post Demand',PlusCircle],['/buyer/my-demands','My Demands',ClipboardList],['/buyer/matches','Matched Farmers',Handshake]],
  admin:[['/dashboard','Dashboard',LayoutDashboard],['/admin/farmers','Manage Farmers',UsersRound],['/admin/buyers','Manage Buyers',UsersRound],['/admin/produce','Manage Produce',ShoppingBasket],['/admin/matches','Manage Matches',Handshake],['/admin/reports','System Reports',BarChart3]]
 };
 function Brand({compact=false}){return <Link to="/" className="brand"><span className="brand-mark"><Leaf size={compact?22:24} strokeWidth={2.5}/></span><span><strong>AgriMatch</strong>{!compact&&<small>Connecting harvests to markets</small>}</span></Link>}
@@ -50,7 +50,7 @@ export default function App(){return <AuthProvider><Layout><Routes>
  <Route path="/login" element={<PublicOnly><Login/></PublicOnly>}/>
  <Route path="/register" element={<PublicOnly><Register/></PublicOnly>}/>
  <Route path="/dashboard" element={<Protected><Dashboard/></Protected>}/>
- <Route path="/profile" element={<Protected roles={['farmer','buyer']}><Profile/></Protected>}/>
+ <Route path="/profile" element={<Navigate to="/dashboard" replace/>}/>
  <Route path="/farmer/add-produce" element={<Protected roles={['farmer']}><AddProduce/></Protected>}/>
  <Route path="/farmer/my-produce" element={<Protected roles={['farmer']}><MyProduce/></Protected>}/>
  <Route path="/farmer/matches" element={<Protected roles={['farmer']}><FarmerMatches/></Protected>}/>

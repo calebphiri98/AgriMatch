@@ -1,13 +1,40 @@
-import React,{useEffect,useState} from 'react';
-import {Link} from 'react-router-dom';
+import React,{useCallback,useEffect,useRef,useState} from 'react';
+import {Link,useLocation} from 'react-router-dom';
 import {ArrowRight,BarChart3,CalendarDays,CheckCircle2,ClipboardList,Handshake,Leaf,PlusCircle,ShoppingBasket,UsersRound,Warehouse} from 'lucide-react';
 import {useAuth} from './App';
 import {api,toForm,fmtDate,pretty} from './api';
 import {Alert,Buttons,CheckCrops,DocumentLink,Empty,Field,FileField,Input,Loading,Pill,Select,Stat,Title} from './components';
 const CROPS=['Maize','Groundnuts','Beans','Soya','Rice','Tobacco','Vegetables','Fruits'];
 const ORGS=['school','hotel','manufacturing_company','hospital','retailer','wholesaler','exporter','other'];
-export function useData(path){const [data,setData]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[serial,setSerial]=useState(0);const reload=()=>setSerial(n=>n+1);
- useEffect(()=>{let ok=true;setLoading(true);setError('');api(path).then(r=>ok&&setData(r)).catch(e=>ok&&setError(e.message)).finally(()=>ok&&setLoading(false));return()=>{ok=false};},[path,serial]);return {data,error,loading,reload};}
+export function useData(path){
+ const location=useLocation();
+ const [data,setData]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[serial,setSerial]=useState(0);
+ const lastRefresh=useRef(0);
+ const reload=useCallback(()=>setSerial(n=>n+1),[]);
+ // Refresh an open page when it is restored from browser history or brought back into focus.
+ useEffect(()=>{
+  const onReturn=(event)=>{
+   if(event.type==='pageshow'&&!event.persisted)return;
+   if(document.visibilityState==='hidden')return;
+   const now=Date.now();
+   if(now-lastRefresh.current<1200)return;
+   lastRefresh.current=now;
+   reload();
+  };
+  window.addEventListener('pageshow',onReturn);
+  window.addEventListener('focus',onReturn);
+  document.addEventListener('visibilitychange',onReturn);
+  return()=>{window.removeEventListener('pageshow',onReturn);window.removeEventListener('focus',onReturn);document.removeEventListener('visibilitychange',onReturn);};
+ },[reload]);
+ // React Router changes location.key when Back/Forward is used, even without a full reload.
+ useEffect(()=>{
+  let active=true;const controller=new AbortController();
+  setLoading(true);setError('');
+  api(path,{signal:controller.signal}).then(r=>{if(active)setData(r);}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});
+  return()=>{active=false;controller.abort();};
+ },[path,serial,location.key]);
+ return {data,error,loading,reload};
+}
 export function useAction(reload){const [busy,setBusy]=useState(false),[feedback,setFeedback]=useState({type:'',msg:''});const run=async(path,body,method='POST')=>{setBusy(true);setFeedback({});try{const r=await api(path,{method,body});setFeedback({type:'success',msg:r.message||'Saved successfully.'});reload?.();return r;}catch(e){setFeedback({type:'error',msg:e.message});return null;}finally{setBusy(false)}};return {busy,feedback,run,setFeedback};}
 export function Feedback({value,onClose}){return value?.msg?<Alert type={value.type} onClose={onClose}>{value.msg}</Alert>:null}
 export function Dashboard(){const {user}=useAuth(),{data,error,loading}=useData('/dashboard');if(loading)return <Loading/>;if(error)return <Alert type="error">{error}</Alert>;
