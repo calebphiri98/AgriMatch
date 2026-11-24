@@ -100,3 +100,28 @@
  .original-auth-card{padding:23px}
 }
 @media(max-width:425px){.original-role-actions{width:100%}.original-role-actions .btn{width:100%}.original-hero h1{font-size:2.2rem}.legacy-look .app-main{padding:20px 13px 45px}}
+
+/* Fix Logout button alignment without changing the existing design */
+.legacy-look .site-header.logged-in .nav-account .logout-btn {
+    width: auto;
+    min-width: max-content;
+    height: 39px;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* Preserve compact Logout button on mobile */
+@media (max-width: 740px) {
+    .legacy-look .site-header.logged-in .nav-account .logout-btn {
+        width: 40px;
+        min-width: 40px;
+        padding: 0;
+    }
+}
