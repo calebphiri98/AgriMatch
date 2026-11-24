@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {unitFamily,toBase,fromBase,evaluateCoverage} from '../src/matching.js';
+const demand={demand_id:4,crop_type:'Maize',min_quantity:300,unit:'bags_50kg'};
+const mk=(id,quantity,unit='bags_50kg',match_status=null)=>({listing_id:id,quantity,unit,match_status});
+test('Units convert correctly between bags and kilograms',()=>{assert.equal(toBase(2,'tonnes'),2000);assert.equal(toBase(2,'bags_90kg'),180);assert.equal(fromBase(2000,'tonnes'),2)});
+test('Crates cannot be combined with kilogram-based supply',()=>assert.notEqual(unitFamily('crates'),unitFamily('bags_50kg')));
+test('Single small listing is eligible even if demand is larger',()=>{const c=evaluateCoverage(demand,[mk(1,40)]);assert.equal(c.listings.length,1);assert.equal(c.fulfillable,false);assert.equal(c.shortfall,260)});
+test('Several farmers can meet an aggregated requirement',()=>{const c=evaluateCoverage(demand,[mk(1,100),mk(2,120),mk(3,80)]);assert.equal(c.fulfillable,true);assert.equal(c.shortfall,0);assert.equal(c.bundle_count,3)});
+test('Largest quantities enter suggested bundle first',()=>{const c=evaluateCoverage({...demand,min_quantity:170},[mk(1,10),mk(2,110),mk(3,80)]);assert.deepEqual(c.listings.filter(x=>x.in_bundle).map(x=>Number(x.listing_id)).sort(),[2,3]);});
+test('Declined matches do not contribute to the available pool',()=>{const c=evaluateCoverage({...demand,min_quantity:100},[mk(1,80,'bags_50kg','rejected'),mk(2,50)]);assert.equal(c.pool_qty,50);assert.equal(c.shortfall,50)});
+test('Already accepted matches reduce the outstanding quantity',()=>{const c=evaluateCoverage({...demand,min_quantity:100},[mk(2,40)],[mk(1,70)]);assert.equal(c.accepted_qty,70);assert.equal(c.fully_accepted,false);assert.equal(c.fulfillable,true)});
+test('A fully accepted demand needs no suggested additional listings',()=>{const c=evaluateCoverage({...demand,min_quantity:100},[mk(2,40)],[mk(1,100)]);assert.equal(c.bundle_count,0);assert.equal(c.fully_accepted,true)});
+test('Crate listings are excluded from a weight demand',()=>{const c=evaluateCoverage(demand,[mk(1,200,'crates'),mk(2,50)]);assert.equal(c.listings.length,1)});
+test('Percentages cannot exceed 100%',()=>{const c=evaluateCoverage({...demand,min_quantity:10},[mk(1,100)]);assert.equal(c.potential_pct,100)});
